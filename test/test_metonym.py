@@ -9,11 +9,11 @@ def main(graph_file, word1, word2):
     synset2 = wn.synsets(word2)
     print("\n===The meaning of each word sense===")
     for syn in synset1 + synset2:
-        print("%s\t%s\t%s" % (syn.name, ":", syn.definition))
+        print("%s\t%s\t%s" % (syn.name(), ":", syn.definition()))
     print("\n===Comparing synset of one term with the synset of another===")
     for syn1 in synset1:
         for syn2 in synset2:
-            print("%s\t%s\t%s" % (syn1.name, syn2.name, graph.path_similarity(syn1, syn2)))
+            print("%s\t%s\t%s" % (syn1.name(), syn2.name(), graph.path_similarity(syn1, syn2)))
 
 
 if __name__ == "__main__":
