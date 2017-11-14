@@ -1,8 +1,11 @@
-MAX_LENGTH = 100
 import networkx as nx
+
+MAX_LENGTH = 100
+
+
 class WordNetGraph(object):
-    def __init__(self, graphfile):
-        self.graph = nx.read_adjlist(graphfile)
+    def __init__(self, graph_file):
+        self.graph = nx.read_adjlist(graph_file)
 
     def shortest_path_distance(self, synset1, synset2):
         try:
@@ -10,11 +13,11 @@ class WordNetGraph(object):
         except nx.NetworkXNoPath:
             return None
 
-    def path_similarity(self, synset1, synset2) :
+    def path_similarity(self, synset1, synset2):
         distance = self.shortest_path_distance(synset1, synset2)
         if distance is None:
             distance = MAX_LENGTH
         if distance == 0:
             return 1
         else:
-            return (1.0/distance)
+            return 1.0 / distance
