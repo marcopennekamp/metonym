@@ -12,6 +12,11 @@ class WordNetGraph(object):
         # by the hypernymy relation.
         self.root_name = 'entity.n.01'
 
+        # The taxonomy depth is the maximum distance from the synset root (entity.n.01) to
+        # any other synset that can be reached via any edges.
+        lengths = list(nx.shortest_path_length(self.graph, self.root_name).values())
+        self.taxonomy_depth = max(lengths)
+
     def shortest_path_distance(self, synset1, synset2):
         try:
             path = nx.shortest_path(self.graph, synset1.name(), synset2.name())
@@ -23,12 +28,7 @@ class WordNetGraph(object):
     def path_similarity(self, synset1, synset2):
         distance = self.shortest_path_distance(synset1, synset2)
         if distance is None:
-            distance = MAX_LENGTH
+            distance = self.taxonomy_depth
 
-        # Simulate the Leacock-Chodorow similarity measure by taking the shortest path to
-        # the entity.n.01 synset as the maximum depth of the taxonomy.
-        # FIXME: The depth changes based on the current synsets, which isn't very good for a stable distance measure.
-        def depth(synset):
-            return nx.shortest_path_length(self.graph, synset.name(), self.root_name)
-        taxonomy_depth = max([depth(synset1), depth(synset2)])
-        return -math.log2(distance / (2 * taxonomy_depth))
+        # Simulate the Leacock-Chodorow similarity measure by factoring in the depth of the taxonomy.
+        return -math.log2(distance / (2 * self.taxonomy_depth))
