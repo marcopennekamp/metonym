@@ -2,3 +2,4 @@
 metonym.iml
 *.adj
 metonym.egg-info
+__pycache__
