@@ -25,7 +25,7 @@ class WordNetGraph(object):
         except nx.NetworkXNoPath:
             return None
 
-    def path_similarity(self, synset1, synset2):
+    def lch_similarity(self, synset1, synset2):
         distance = self.shortest_path_distance(synset1, synset2)
         if distance is None:
             distance = self.taxonomy_depth
