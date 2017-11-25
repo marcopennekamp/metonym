@@ -6,7 +6,7 @@ MAX_LENGTH = 100
 
 class WordNetGraph(object):
     def __init__(self, graph_file):
-        self.graph = nx.read_adjlist(graph_file)
+        self.graph = nx.read_gml(graph_file)
 
         # The name of the graph's "root" node, in reference to the taxonomy induced
         # by the hypernymy relation.
@@ -14,13 +14,14 @@ class WordNetGraph(object):
 
         # The taxonomy depth is the maximum distance from the synset root (entity.n.01) to
         # any other synset that can be reached via any edges.
-        lengths = list(nx.shortest_path_length(self.graph, self.root_name).values())
+        lengths = list(nx.shortest_path_length(self.graph, self.root_name, weight="weight").values())
         self.taxonomy_depth = max(lengths)
 
     def shortest_path_distance(self, synset1, synset2):
         try:
-            path = nx.shortest_path(self.graph, synset1.name(), synset2.name())
+            path = nx.shortest_path(self.graph, synset1.name(), synset2.name(), weight="weight")
             #print(path)
+            print(len(path))
             return len(path)
         except nx.NetworkXNoPath:
             return None

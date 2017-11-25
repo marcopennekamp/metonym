@@ -4,26 +4,34 @@ from argparse import ArgumentParser
 import networkx as nx
 
 
-def add_node(synset, seen_nodes, graph):
-    node = synset.name()
-    if node not in seen_nodes:
-        graph.add_node(node)
-        seen_nodes.add(node)
+def add_edges(graph, seen_edges, source, synsets, weight):
+    """
+    Add a set of edges to the graph coming from a source synset to a set of synsets.
 
+    :param source: The synset that is the source of the edge.
+    :param synsets: The synsets that are targeted by the source synset via some relation.
+    :param weight: The weight of each edge.
+    :return:
+    """
 
-def add_edge(synset1, synset2, seen_edges, graph):
-    edge = (synset1.name(), synset2.name())
-    if edge not in seen_edges:
-        graph.add_edge(edge[0], edge[1])
-        seen_edges.add(edge)
-        seen_edges.add((edge[1], edge[0]))
+    for target in synsets:
+        edge = (source.name(), target.name())
+        if edge not in seen_edges:
+            graph.add_edge(edge[0], edge[1], weight=weight)
+            seen_edges.add(edge)
+            seen_edges.add((edge[1], edge[0]))
 
 
 def create_graph():
-    seen_nodes = set()
     seen_edges = set()
     graph = nx.Graph()
-    all_synsets = wn.all_synsets()
+    all_synsets = list(wn.all_synsets())
+
+    # Add all synsets to the graph. We will add edges later.
+    for synset in all_synsets:
+        graph.add_node(synset.name())
+
+    # Loop through all synsets and add edges based on the links between two synsets.
     for synset in all_synsets:
         related_synsets = synset.also_sees() + synset.attributes() + \
                           synset.causes() + synset.entailments() + \
@@ -44,16 +52,13 @@ def create_graph():
             lemma_related.extend(related_lemmas)
         related_synsets.extend([lemma.synset() for lemma in lemma_related])
         related_synsets = list(set(related_synsets))
-        add_node(synset, seen_nodes, graph)
-        for tsynset in related_synsets:
-            add_node(tsynset, seen_nodes, graph)
-            add_edge(synset, tsynset, seen_edges, graph)
+        add_edges(graph, seen_edges, synset, related_synsets, 10)
     return graph
 
 
 def main(graph_file):
     graph = create_graph()
-    nx.write_adjlist(graph, graph_file)
+    nx.write_gml(graph, graph_file)
 
 
 if __name__ == "__main__":
