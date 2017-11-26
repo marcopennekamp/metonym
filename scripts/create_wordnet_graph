@@ -52,7 +52,7 @@ def create_graph():
             lemma_related.extend(related_lemmas)
         related_synsets.extend([lemma.synset() for lemma in lemma_related])
         related_synsets = list(set(related_synsets))
-        add_edges(graph, seen_edges, synset, related_synsets, 10)
+        add_edges(graph, seen_edges, synset, related_synsets, 1)
     return graph
 
 
