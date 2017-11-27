@@ -25,7 +25,10 @@ def add_edges(graph, seen_edges, source, synsets, weight):
 def create_graph():
     seen_edges = set()
     graph = nx.Graph()
-    all_synsets = list(wn.all_synsets())
+
+    # Filter instances right away. We filter a synset if it has at least one instance hypernym,
+    # in which case it must be an instance (instances themselves are leafs in the hypernymy tree).
+    all_synsets = list(filter(lambda s: not s.instance_hypernyms(), wn.all_synsets()))
 
     # Add all synsets to the graph. We will add edges later.
     for synset in all_synsets:
