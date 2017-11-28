@@ -4,6 +4,10 @@ from argparse import ArgumentParser
 import networkx as nx
 
 
+def filter_instances(synsets):
+    return filter(lambda s: not s.instance_hypernyms(), synsets)
+
+
 def add_edges(graph, seen_edges, source, synsets, weight):
     """
     Add a set of edges to the graph coming from a source synset to a set of synsets.
@@ -14,7 +18,9 @@ def add_edges(graph, seen_edges, source, synsets, weight):
     :return:
     """
 
-    for target in synsets:
+    # Filter instance synsets so that nodes aren't added by accident via an edge.
+    filtered_synsets = filter_instances(synsets)
+    for target in filtered_synsets:
         edge = (source.name(), target.name())
         if edge not in seen_edges:
             graph.add_edge(edge[0], edge[1], weight=weight)
@@ -25,9 +31,6 @@ def add_edges(graph, seen_edges, source, synsets, weight):
 def create_graph():
     seen_edges = set()
     graph = nx.Graph()
-
-    def filter_instances(synsets):
-        return filter(lambda s: not s.instance_hypernyms(), synsets)
 
     # Filter instances right away. We filter a synset if it has at least one instance hypernym,
     # in which case it must be an instance (instances themselves are leafs in the hypernymy tree).
@@ -55,7 +58,7 @@ def create_graph():
                              lemma.pertainyms() + lemma.also_sees()
             lemma_related.extend(related_lemmas)
         related_synsets.extend([lemma.synset() for lemma in lemma_related])
-        related_synsets = list(filter_instances(set(related_synsets)))
+        related_synsets = list(set(related_synsets))
         add_edges(graph, seen_edges, synset, related_synsets, 1)
 
     print(f'Number of nodes: {graph.number_of_nodes()}')
