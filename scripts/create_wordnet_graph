@@ -26,9 +26,12 @@ def create_graph():
     seen_edges = set()
     graph = nx.Graph()
 
+    def filter_instances(synsets):
+        return filter(lambda s: not s.instance_hypernyms(), synsets)
+
     # Filter instances right away. We filter a synset if it has at least one instance hypernym,
     # in which case it must be an instance (instances themselves are leafs in the hypernymy tree).
-    all_synsets = list(filter(lambda s: not s.instance_hypernyms(), wn.all_synsets()))
+    all_synsets = list(filter_instances(wn.all_synsets()))
 
     # Add all synsets to the graph. We will add edges later.
     for synset in all_synsets:
@@ -39,7 +42,6 @@ def create_graph():
         related_synsets = synset.also_sees() + synset.attributes() + \
                           synset.causes() + synset.entailments() + \
                           synset.hypernyms() + synset.hyponyms() + \
-                          synset.instance_hypernyms() + synset.instance_hyponyms() + \
                           synset.similar_tos() + synset.topic_domains() + \
                           synset.verb_groups()
         lemmas = synset.lemmas()
@@ -48,14 +50,16 @@ def create_graph():
             related_lemmas = lemma.derivationally_related_forms() + \
                              lemma.attributes() + lemma.causes() + \
                              lemma.entailments() + lemma.hypernyms() + \
-                             lemma.hyponyms() + lemma.instance_hypernyms() + \
-                             lemma.instance_hyponyms() + lemma.similar_tos() + \
+                             lemma.hyponyms() + lemma.similar_tos() + \
                              lemma.topic_domains() + lemma.verb_groups() + \
                              lemma.pertainyms() + lemma.also_sees()
             lemma_related.extend(related_lemmas)
         related_synsets.extend([lemma.synset() for lemma in lemma_related])
-        related_synsets = list(set(related_synsets))
+        related_synsets = list(filter_instances(set(related_synsets)))
         add_edges(graph, seen_edges, synset, related_synsets, 1)
+
+    print(f'Number of nodes: {graph.number_of_nodes()}')
+    print(f'Number of edges: {graph.number_of_edges()}')
     return graph
 
 
