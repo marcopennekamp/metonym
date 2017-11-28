@@ -46,6 +46,16 @@ def create_graph():
 
     # Loop through all synsets and add edges based on the links between two synsets.
     for synset in all_synsets:
+        # if synset.pos() == wn.VERB:
+        #     weight = 4
+
+        # also_sees: Used to denote similar meanings for adjectives.
+        # attributes: Nouns for which adjectives express values (e.g. weight and heavy).
+        # causes: Verbs/actions that are caused by the given verb.
+        # entailments: Given verb X can't be done unless Y is also done.
+        # similar_tos: Adjectives that are similar to the given adjective.
+        # topic_domains: Categories that a sense belongs to.
+        # verb_groups: Verbs that belong to the same sense group (we should heavily promote this).
         related_synsets = synset.also_sees() + synset.attributes() + \
                           synset.causes() + synset.entailments() + \
                           synset.hypernyms() + synset.hyponyms() + \
