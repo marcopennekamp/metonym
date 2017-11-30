@@ -17,6 +17,12 @@ class WordNetGraph(object):
         lengths = list(nx.shortest_path_length(self.graph, self.root_name, weight='weight').values())
         self.taxonomy_depth = max(lengths)
 
+    def shortest_path(self, synset1, synset2):
+        try:
+            return nx.shortest_path(self.graph, synset1.name(), synset2.name(), weight='weight')
+        except nx.NetworkXNoPath:
+            return None
+
     def shortest_path_distance(self, synset1, synset2):
         try:
             return nx.shortest_path_length(self.graph, synset1.name(), synset2.name(), weight='weight')
