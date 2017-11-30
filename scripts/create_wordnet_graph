@@ -14,6 +14,7 @@ def add_edges(graph, source, synsets, weight):
     or update the weight (the minimum of current and new weight) if an edge is already
     present.
 
+    :param graph: The graph that the edges should be added to.
     :param source: The synset that is the source of the edge.
     :param synsets: The synsets that are targeted by the source synset via some relation.
     :param weight: The weight of each edge.
@@ -33,6 +34,11 @@ def add_edges(graph, source, synsets, weight):
             graph.add_edge(u, v, weight=weight)
 
 
+def add_lemma_edges(graph, source, lemmas, weight):
+    synsets = map(lambda lemma: lemma.synset(), lemmas)
+    add_edges(graph, source, synsets, weight)
+
+
 def create_graph():
     graph = nx.Graph()
 
@@ -46,34 +52,43 @@ def create_graph():
 
     # Loop through all synsets and add edges based on the links between two synsets.
     for synset in all_synsets:
-        # if synset.pos() == wn.VERB:
-        #     weight = 4
-
         # also_sees: Used to denote similar meanings for adjectives.
-        # attributes: Nouns for which adjectives express values (e.g. weight and heavy).
-        # causes: Verbs/actions that are caused by the given verb.
-        # entailments: Given verb X can't be done unless Y is also done.
+        # attributes: Nouns for which given adjectives express values (e.g. weight and heavy).
         # similar_tos: Adjectives that are similar to the given adjective.
         # topic_domains: Categories that a sense belongs to.
-        # verb_groups: Verbs that belong to the same sense group (we should heavily promote this).
-        related_synsets = synset.also_sees() + synset.attributes() + \
-                          synset.causes() + synset.entailments() + \
-                          synset.hypernyms() + synset.hyponyms() + \
-                          synset.similar_tos() + synset.topic_domains() + \
-                          synset.verb_groups()
+        if synset.pos() in [wn.ADJ, wn.ADJ_SAT, wn.ADV]:
+            add_edges(graph, synset, synset.also_sees(), 3)
+            add_edges(graph, synset, synset.attributes(), 1)
+            add_edges(graph, synset, synset.similar_tos(), 2)
+            add_edges(graph, synset, synset.topic_domains(), 1)
+        elif synset.pos() == wn.NOUN:
+            add_edges(graph, synset, synset.hypernyms(), 1)
+            add_edges(graph, synset, synset.hyponyms(), 1)
+        # causes: Verbs/actions that are caused by the given verb.
+        # entailments: Given verb X can't be done unless Y is also done.
+        # verb_groups: Verbs that belong to the same sense group.
+        elif synset.pos() == wn.VERB:
+            add_edges(graph, synset, synset.causes(), 2)
+            add_edges(graph, synset, synset.entailments(), 3)
+            add_edges(graph, synset, synset.verb_groups(), 1)
+            # We tax the verb hierarchy, because it's much flatter than the noun hierarchy.
+            # This
+            add_edges(graph, synset, synset.hypernyms(), 2)
+            add_edges(graph, synset, synset.hyponyms(), 2)
+
         lemmas = synset.lemmas()
-        lemma_related = []
         for lemma in lemmas:
-            related_lemmas = lemma.derivationally_related_forms() + \
-                             lemma.attributes() + lemma.causes() + \
-                             lemma.entailments() + lemma.hypernyms() + \
-                             lemma.hyponyms() + lemma.similar_tos() + \
-                             lemma.topic_domains() + lemma.verb_groups() + \
-                             lemma.pertainyms() + lemma.also_sees()
-            lemma_related.extend(related_lemmas)
-        related_synsets.extend([lemma.synset() for lemma in lemma_related])
-        related_synsets = list(set(related_synsets))
-        add_edges(graph, synset, related_synsets, 1)
+            add_lemma_edges(graph, synset, lemma.derivationally_related_forms(), 1)
+            #add_lemma_edges(graph, synset, lemma.attributes(), 1)
+            #add_lemma_edges(graph, synset, lemma.causes(), 1)
+            #add_lemma_edges(graph, synset, lemma.entailments(), 1)
+            #add_lemma_edges(graph, synset, lemma.hypernyms(), 1)
+            #add_lemma_edges(graph, synset, lemma.hyponyms(), 1)
+            #add_lemma_edges(graph, synset, lemma.similar_tos(), 1)
+            #add_lemma_edges(graph, synset, lemma.topic_domains(), 1)
+            #add_lemma_edges(graph, synset, lemma.verb_groups(), 1)
+            #add_lemma_edges(graph, synset, lemma.pertainyms(), 1)
+            #add_lemma_edges(graph, synset, lemma.also_sees(), 1)
 
     print(f'Number of nodes: {graph.number_of_nodes()}')
     print(f'Number of edges: {graph.number_of_edges()}')
