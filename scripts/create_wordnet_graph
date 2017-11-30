@@ -79,6 +79,7 @@ def create_graph():
         lemmas = synset.lemmas()
         for lemma in lemmas:
             add_lemma_edges(graph, synset, lemma.derivationally_related_forms(), 1)
+            add_lemma_edges(graph, synset, lemma.antonyms(), 1)
             #add_lemma_edges(graph, synset, lemma.attributes(), 1)
             #add_lemma_edges(graph, synset, lemma.causes(), 1)
             #add_lemma_edges(graph, synset, lemma.entailments(), 1)
