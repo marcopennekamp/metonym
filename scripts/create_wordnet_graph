@@ -72,7 +72,7 @@ def create_graph():
             add_edges(graph, synset, synset.entailments(), 3)
             add_edges(graph, synset, synset.verb_groups(), 1)
             # We tax the verb hierarchy, because it's much flatter than the noun hierarchy.
-            # This
+            # If we don't do so, verbs have a higher "basic" similarity than nouns.
             add_edges(graph, synset, synset.hypernyms(), 2)
             add_edges(graph, synset, synset.hyponyms(), 2)
 
