@@ -2,30 +2,34 @@
 from nltk.corpus import wordnet as wn
 from argparse import ArgumentParser
 import networkx as nx
+import metonym
 
 
-def filter_instances(synsets):
-    return filter(lambda s: not s.instance_hypernyms(), synsets)
+def filter_instance_nodes(nodes):
+    return filter(lambda node: not node.synset.instance_hypernyms(), nodes)
 
 
-def add_edges(graph, source, synsets, weight):
+def filter_instance_synsets(synsets):
+    return filter(lambda synset: not synset.instance_hypernyms(), synsets)
+
+
+def add_edges(graph, source, targets, weight):
     """
-    Add a set of edges to the graph coming from a source synset to a set of synsets
-    or update the weight (the minimum of current and new weight) if an edge is already
-    present.
+    Add a set of edges to the graph coming from a source to a set of targets or update
+    the weight (the minimum of current and new weight) if an edge is already present.
 
     :param graph: The graph that the edges should be added to.
-    :param source: The synset that is the source of the edge.
-    :param synsets: The synsets that are targeted by the source synset via some relation.
+    :param source: The node that is the source of the edge.
+    :param targets: The nodes that are targeted by the source via some relation.
     :param weight: The weight of each edge.
     :return:
     """
 
-    # Filter instance synsets so that instance nodes aren't added by accident.
-    filtered_synsets = filter_instances(synsets)
-    for target in filtered_synsets:
-        u = source.name()
-        v = target.name()
+    # Filter instance nodes so that they aren't added by accident.
+    filtered_targets = filter_instance_nodes(targets)
+    for target in filtered_targets:
+        u = source.key()
+        v = target.key()
         if graph.has_edge(u, v):
             current_weight = graph[u][v]['weight']
             if current_weight > weight:
@@ -34,9 +38,14 @@ def add_edges(graph, source, synsets, weight):
             graph.add_edge(u, v, weight=weight)
 
 
+def add_synset_edges(graph, source, synsets, weight):
+    targets = [metonym.Node(synset, lemma) for synset in synsets for lemma in synset.lemmas()]
+    add_edges(graph, source, targets, weight)
+
+
 def add_lemma_edges(graph, source, lemmas, weight):
-    synsets = map(lambda lemma: lemma.synset(), lemmas)
-    add_edges(graph, source, synsets, weight)
+    targets = [metonym.Node(lemma.synset(), lemma) for lemma in lemmas]
+    add_edges(graph, source, targets, weight)
 
 
 def create_graph():
@@ -44,42 +53,38 @@ def create_graph():
 
     # Filter instances right away. We filter a synset if it has at least one instance hypernym,
     # in which case it must be an instance (instances themselves are leafs in the hypernymy tree).
-    all_synsets = list(filter_instances(wn.all_synsets()))
-
-    # Add all synsets to the graph. We will add edges later.
-    for synset in all_synsets:
-        graph.add_node(synset.name())
+    all_synsets = list(filter_instance_synsets(wn.all_synsets()))
 
     # Loop through all synsets and add edges based on the links between two synsets.
     for synset in all_synsets:
-        # also_sees: Used to denote similar meanings for adjectives.
-        # attributes: Nouns for which given adjectives express values (e.g. weight and heavy).
-        # similar_tos: Adjectives that are similar to the given adjective.
-        # topic_domains: Categories that a sense belongs to.
-        if synset.pos() in [wn.ADJ, wn.ADJ_SAT, wn.ADV]:
-            add_edges(graph, synset, synset.also_sees(), 3)
-            add_edges(graph, synset, synset.attributes(), 1)
-            add_edges(graph, synset, synset.similar_tos(), 2)
-            add_edges(graph, synset, synset.topic_domains(), 1)
-        elif synset.pos() == wn.NOUN:
-            add_edges(graph, synset, synset.hypernyms(), 1)
-            add_edges(graph, synset, synset.hyponyms(), 1)
-        # causes: Verbs/actions that are caused by the given verb.
-        # entailments: Given verb X can't be done unless Y is also done.
-        # verb_groups: Verbs that belong to the same sense group.
-        elif synset.pos() == wn.VERB:
-            add_edges(graph, synset, synset.causes(), 2)
-            add_edges(graph, synset, synset.entailments(), 3)
-            add_edges(graph, synset, synset.verb_groups(), 1)
-            # We tax the verb hierarchy, because it's much flatter than the noun hierarchy.
-            # If we don't do so, verbs have a higher "basic" similarity than nouns.
-            add_edges(graph, synset, synset.hypernyms(), 2)
-            add_edges(graph, synset, synset.hyponyms(), 2)
+        for lemma in synset.lemmas():
+            node = metonym.Node(synset, lemma)
+            # also_sees: Used to denote similar meanings for adjectives.
+            # attributes: Nouns for which given adjectives express values (e.g. weight and heavy).
+            # similar_tos: Adjectives that are similar to the given adjective.
+            # topic_domains: Categories that a sense belongs to.
+            if synset.pos() in [wn.ADJ, wn.ADJ_SAT, wn.ADV]:
+                add_synset_edges(graph, node, synset.also_sees(), 3)
+                add_synset_edges(graph, node, synset.attributes(), 1)
+                add_synset_edges(graph, node, synset.similar_tos(), 2)
+                add_synset_edges(graph, node, synset.topic_domains(), 1)
+            elif synset.pos() == wn.NOUN:
+                add_synset_edges(graph, node, synset.hypernyms(), 1)
+                add_synset_edges(graph, node, synset.hyponyms(), 1)
+            # causes: Verbs/actions that are caused by the given verb.
+            # entailments: Given verb X can't be done unless Y is also done.
+            # verb_groups: Verbs that belong to the same sense group.
+            elif synset.pos() == wn.VERB:
+                add_synset_edges(graph, node, synset.causes(), 2)
+                add_synset_edges(graph, node, synset.entailments(), 3)
+                add_synset_edges(graph, node, synset.verb_groups(), 1)
+                # We tax the verb hierarchy, because it's much flatter than the noun hierarchy.
+                # If we don't do so, verbs have a higher "basic" similarity than nouns.
+                add_synset_edges(graph, node, synset.hypernyms(), 2)
+                add_synset_edges(graph, node, synset.hyponyms(), 2)
 
-        lemmas = synset.lemmas()
-        for lemma in lemmas:
-            add_lemma_edges(graph, synset, lemma.derivationally_related_forms(), 1)
-            add_lemma_edges(graph, synset, lemma.antonyms(), 1)
+            add_lemma_edges(graph, node, lemma.derivationally_related_forms(), 1)
+            add_lemma_edges(graph, node, lemma.antonyms(), 1)
             #add_lemma_edges(graph, synset, lemma.attributes(), 1)
             #add_lemma_edges(graph, synset, lemma.causes(), 1)
             #add_lemma_edges(graph, synset, lemma.entailments(), 1)

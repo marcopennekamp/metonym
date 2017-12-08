@@ -1,7 +1,29 @@
+from nltk.corpus import wordnet as wn
 import math
 import networkx as nx
 
 MAX_LENGTH = 100
+
+
+class Node:
+    def __init__(self, synset, lemma):
+        self.synset = synset
+        self.lemma = lemma
+
+    def key(self):
+        return f'{self.synset.name()}//{self.lemma.name()}'
+
+    @staticmethod
+    def from_key(key):
+        parts = key.split('//')
+        synset = wn.synset(parts[0])
+        return Node.from_synset_and_lemma_name(synset, parts[1])
+
+    @staticmethod
+    def from_synset_and_lemma_name(synset, lemma_name):
+        lemmas = [lemma for lemma in synset.lemmas() if lemma.name() == lemma_name]
+        assert len(lemmas) == 1, "There must be exactly one lemma with the correct name."
+        return Node(synset, lemmas[0])
 
 
 class WordNetGraph(object):
