@@ -85,16 +85,7 @@ def create_graph():
 
             add_lemma_edges(graph, node, lemma.derivationally_related_forms(), 1)
             add_lemma_edges(graph, node, lemma.antonyms(), 1)
-            #add_lemma_edges(graph, synset, lemma.attributes(), 1)
-            #add_lemma_edges(graph, synset, lemma.causes(), 1)
-            #add_lemma_edges(graph, synset, lemma.entailments(), 1)
-            #add_lemma_edges(graph, synset, lemma.hypernyms(), 1)
-            #add_lemma_edges(graph, synset, lemma.hyponyms(), 1)
-            #add_lemma_edges(graph, synset, lemma.similar_tos(), 1)
-            #add_lemma_edges(graph, synset, lemma.topic_domains(), 1)
-            #add_lemma_edges(graph, synset, lemma.verb_groups(), 1)
             #add_lemma_edges(graph, synset, lemma.pertainyms(), 1)
-            #add_lemma_edges(graph, synset, lemma.also_sees(), 1)
 
     print(f'Number of nodes: {graph.number_of_nodes()}')
     print(f'Number of edges: {graph.number_of_edges()}')
